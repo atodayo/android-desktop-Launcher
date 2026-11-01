@@ -42,7 +42,6 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
@@ -67,6 +66,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -78,6 +78,7 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlinx.coroutines.delay
+import androidx.compose.material3.ExperimentalMaterial3Api
 
 // ---------- クイック設定パネル ----------
 
@@ -149,7 +150,7 @@ fun QuickPanel(battery: Int, onDismiss: () -> Unit) {
                         if (Build.VERSION.SDK_INT >= 29) Settings.Panel.ACTION_WIFI else Settings.ACTION_WIFI_SETTINGS
                     )
                 }
-                Tile(Icons.Filled.SwapVert, "インターネット", Modifier.weight(1f)) {
+                Tile(Icons.Filled.SwapVert, stringResource(R.string.tile_internet), Modifier.weight(1f)) {
                     openSettings(
                         ctx,
                         if (Build.VERSION.SDK_INT >= 29) Settings.Panel.ACTION_INTERNET_CONNECTIVITY else Settings.ACTION_WIRELESS_SETTINGS
@@ -208,12 +209,12 @@ fun PowerMenu(time: String, onDismiss: () -> Unit, onSleep: () -> Unit, onRestar
     ) {
         Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(time, color = Color.White, fontSize = 46.sp, fontWeight = FontWeight.Bold)
-            Text("またね!", color = Color(0xAAFFFFFF), fontSize = 13.sp)
+            Text(stringResource(R.string.power_bye), color = Color(0xAAFFFFFF), fontSize = 13.sp)
             Spacer(Modifier.height(28.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                PowerBtn(Icons.Filled.Bedtime, "スリープ", true, onSleep)
-                PowerBtn(Icons.Filled.RestartAlt, "再起動", false, onRestart)
-                PowerBtn(Icons.Filled.PowerSettingsNew, "電源オフ", false, onOff)
+                PowerBtn(Icons.Filled.Bedtime, stringResource(R.string.power_sleep), true, onSleep)
+                PowerBtn(Icons.Filled.RestartAlt, stringResource(R.string.power_restart), false, onRestart)
+                PowerBtn(Icons.Filled.PowerSettingsNew, stringResource(R.string.power_off), false, onOff)
             }
         }
     }
@@ -234,17 +235,17 @@ fun SleepScreen(onWake: () -> Unit) {
     ) {
         if (asked) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("スリープ中です、オフにしますか?", color = Color.White, fontSize = 16.sp, textAlign = TextAlign.Center)
+                Text(stringResource(R.string.sleep_message), color = Color.White, fontSize = 16.sp, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(20.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(
                         onClick = onWake,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B7CFF), contentColor = Color.White)
-                    ) { Text("はい") }
+                    ) { Text(stringResource(R.string.yes)) }
                     OutlinedButton(
                         onClick = { asked = false },
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
-                    ) { Text("いいえ") }
+                    ) { Text(stringResource(R.string.no)) }
                 }
             }
         }
@@ -263,7 +264,7 @@ fun RestartScreen(onDone: () -> Unit) {
     }
     Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
         when (phase) {
-            0 -> Text("再起動中…", color = Color.White, fontSize = 18.sp)
+            0 -> Text(stringResource(R.string.restarting), color = Color.White, fontSize = 18.sp)
             2 -> AtomLogo(Modifier.size(72.dp), spin = true)
             else -> {}
         }
@@ -303,6 +304,8 @@ fun LockScreen(
 ) {
     var pw by remember { mutableStateOf("") }
     var err by remember { mutableStateOf("") }
+    val tooShort = stringResource(R.string.pw_too_short)
+    val wrongPw = stringResource(R.string.pw_wrong)
 
     fun submit() {
         if (!hasPassword) {
@@ -310,12 +313,12 @@ fun LockScreen(
                 onSetPassword(pw)
                 onUnlock()
             } else {
-                err = "4文字以上にしてね"
+                err = tooShort
             }
         } else if (onCheck(pw)) {
             onUnlock()
         } else {
-            err = "パスワードがちがうよ"
+            err = wrongPw
             pw = ""
         }
     }
@@ -344,7 +347,7 @@ fun LockScreen(
                 value = pw,
                 onValueChange = { pw = it; err = "" },
                 singleLine = true,
-                placeholder = { Text(if (hasPassword) "パスワードを入力" else "新しいパスワードを決めてね") },
+                placeholder = { Text(stringResource(if (hasPassword) R.string.pw_enter else R.string.pw_new)) },
                 leadingIcon = { QIcon(Icons.Filled.Lock, 16.dp) },
                 trailingIcon = {
                     IconButton(onClick = { submit() }) { QIcon(Icons.Filled.ArrowForward, 18.dp) }
