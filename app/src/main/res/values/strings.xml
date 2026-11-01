@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remove_from_dock">Remove from taskbar</string>
+    <string name="add_to_dock">Add to taskbar</string>
+    <string name="dock_label">Taskbar</string>
+    <string name="search_placeholder">Search apps</string>
+    <string name="close">Close</string>
+    <string name="search_hint">Long-press to add or remove apps from the taskbar (up to 12)</string>
+    <string name="tile_internet">Internet</string>
+    <string name="power_bye">See you!</string>
+    <string name="power_sleep">Sleep</string>
+    <string name="power_restart">Restart</string>
+    <string name="power_off">Power off</string>
+    <string name="sleep_message">Sleeping. Turn it off?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="restarting">Restarting…</string>
+    <string name="pw_enter">Enter password</string>
+    <string name="pw_new">Set a new password</string>
+    <string name="pw_too_short">Use at least 4 characters</string>
+    <string name="pw_wrong">Wrong password</string>
+    <string name="toast_dnd_access">Please allow Do Not Disturb access for Quantum</string>
+    <string name="toast_dock_full">The taskbar is full (max %d)</string>
+    <string name="date_format">EEE, M/d</string>
+</resources>
