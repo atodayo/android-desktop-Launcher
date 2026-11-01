@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remove_from_dock">从任务栏移除</string>
+    <string name="add_to_dock">添加到任务栏</string>
+    <string name="dock_label">任务栏</string>
+    <string name="search_placeholder">搜索应用</string>
+    <string name="close">关闭</string>
+    <string name="search_hint">长按可添加或移除任务栏应用(最多12个)</string>
+    <string name="tile_internet">互联网</string>
+    <string name="power_bye">回头见!</string>
+    <string name="power_sleep">睡眠</string>
+    <string name="power_restart">重启</string>
+    <string name="power_off">关机</string>
+    <string name="sleep_message">正在睡眠,要关闭吗?</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    <string name="restarting">正在重启…</string>
+    <string name="pw_enter">输入密码</string>
+    <string name="pw_new">设置新密码</string>
+    <string name="pw_too_short">请至少输入4个字符</string>
+    <string name="pw_wrong">密码错误</string>
+    <string name="toast_dnd_access">请允许 Quantum 访问勿扰设置</string>
+    <string name="toast_dock_full">任务栏已满(最多%d个)</string>
+    <string name="date_format">M月d日 E</string>
+</resources>
