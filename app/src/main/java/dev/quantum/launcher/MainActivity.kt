@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import java.time.LocalDateTime
@@ -64,7 +65,6 @@ class MainActivity : ComponentActivity() {
 
 enum class Mode { Home, Search, Panel, Power, Sleep, Restart, Lock }
 
-private val DATE_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("M/d(E)", Locale.JAPAN)
 private const val MAX_DOCK = 12
 
 @Composable
@@ -120,13 +120,16 @@ fun QuantumApp(tick: Int) {
     val now by rememberNow()
     val hh = "%02d".format(now.hour)
     val mm = "%02d".format(now.minute)
-    val date = now.format(DATE_FMT)
+    val dateFormat = stringResource(R.string.date_format)
+    val date = now.format(DateTimeFormatter.ofPattern(dateFormat, Locale.getDefault()))
+    val dndAccessMsg = stringResource(R.string.toast_dnd_access)
+    val dockFullMsg = stringResource(R.string.toast_dock_full, MAX_DOCK)
 
     fun toast(msg: String) = Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
 
     fun toggleDnd() {
         if (!nm.isNotificationPolicyAccessGranted) {
-            toast("「Quantum」に通知ポリシーのアクセスを許可してね")
+            toast(dndAccessMsg)
             runCatching {
                 ctx.startActivity(
                     Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
@@ -148,7 +151,7 @@ fun QuantumApp(tick: Int) {
         if (pkg in dock) {
             dock = dock - pkg
         } else if (dock.size >= MAX_DOCK) {
-            toast("タスクバーはいっぱいだよ(最大${MAX_DOCK}個)")
+            toast(dockFullMsg)
             return
         } else {
             dock = dock + pkg
