@@ -26,4 +26,8 @@
     <string name="language">Language</string>
     <string name="lang_system">System default</string>
     <string name="open_system_settings">Open Android settings</string>
+    <string name="glass_title">Glass</string>
+    <string name="glass_off">Off</string>
+    <string name="glass_frosted">Frosted glass</string>
+    <string name="glass_clear">Clear glass</string>
 </resources>
