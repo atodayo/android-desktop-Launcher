@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -33,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -74,54 +77,94 @@ fun LanguagePill(current: String, onSelect: (String) -> Unit, modifier: Modifier
 // ---------- Quantum設定 ----------
 
 @Composable
-fun SettingsScreen(currentLang: String, onLang: (String) -> Unit, onClose: () -> Unit) {
+fun glassName(g: GlassStyle): String = stringResource(
+    when (g) {
+        GlassStyle.Off -> R.string.glass_off
+        GlassStyle.Frosted -> R.string.glass_frosted
+        GlassStyle.Clear -> R.string.glass_clear
+    }
+)
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text,
+        color = QViolet, fontSize = 12.sp,
+        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+    )
+}
+
+@Composable
+private fun OptionRow(label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
+        if (selected) QIcon(Icons.Filled.Check, 18.dp, QViolet)
+    }
+}
+
+@Composable
+fun SettingsScreen(
+    currentLang: String,
+    onLang: (String) -> Unit,
+    glass: GlassStyle,
+    onGlass: (GlassStyle) -> Unit,
+    onClose: () -> Unit
+) {
     val ctx = LocalContext.current
     BackHandler(onBack = onClose)
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(Color(0xF2090912))
-            .statusBarsPadding()
-            .padding(16.dp)
+    GlassBox(
+        Modifier.fillMaxSize(),
+        RectangleShape,
+        offFill = Color(0xF2090912),
+        extraDim = Color(0x66000000)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onClose) { QIcon(Icons.AutoMirrored.Filled.ArrowBack, 22.dp) }
-            Text(
-                stringResource(R.string.settings_title),
-                color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold
-            )
-        }
-        Spacer(Modifier.height(16.dp))
-        Text(
-            stringResource(R.string.language),
-            color = QViolet, fontSize = 12.sp,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-        )
-        LANGS.forEach { tag ->
+        Column(
+            Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onClose) { QIcon(Icons.AutoMirrored.Filled.ArrowBack, 22.dp) }
+                Text(
+                    stringResource(R.string.settings_title),
+                    color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+
+            SectionTitle(stringResource(R.string.language))
+            LANGS.forEach { tag ->
+                OptionRow(langName(tag), tag == currentLang) { onLang(tag) }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            SectionTitle(stringResource(R.string.glass_title))
+            GlassStyle.values().forEach { g ->
+                OptionRow(glassName(g), g == glass) { onGlass(g) }
+            }
+
+            Spacer(Modifier.height(20.dp))
             Row(
                 Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .clickable { onLang(tag) }
+                    .clickable { openSettings(ctx, Settings.ACTION_SETTINGS) }
                     .padding(horizontal = 8.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(langName(tag), color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                if (tag == currentLang) QIcon(Icons.Filled.Check, 18.dp, QViolet)
+                QIcon(Icons.Filled.SettingsIcon, 18.dp)
+                Spacer(Modifier.width(12.dp))
+                Text(stringResource(R.string.open_system_settings), color = Color.White, fontSize = 15.sp)
             }
-        }
-        Spacer(Modifier.height(20.dp))
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .clickable { openSettings(ctx, Settings.ACTION_SETTINGS) }
-                .padding(horizontal = 8.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            QIcon(Icons.Filled.SettingsIcon, 18.dp)
-            Spacer(Modifier.width(12.dp))
-            Text(stringResource(R.string.open_system_settings), color = Color.White, fontSize = 15.sp)
         }
     }
 }
