@@ -99,7 +99,7 @@ private fun Tile(icon: ImageVector, label: String, modifier: Modifier, onClick: 
 }
 
 @Composable
-fun QuickPanel(battery: Int, onDismiss: () -> Unit) {
+fun QuickPanel(battery: Int, onDismiss: () -> Unit, onOpenSettings: () -> Unit) {
     val ctx = LocalContext.current
     BackHandler(onBack = onDismiss)
     val am = remember { ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
@@ -170,7 +170,7 @@ fun QuickPanel(battery: Int, onDismiss: () -> Unit) {
                     QIcon(Icons.Filled.BatteryFull, 18.dp)
                     Text("$battery%", color = Color.White, fontSize = 13.sp)
                 }
-                IconButton(onClick = { openSettings(ctx, Settings.ACTION_SETTINGS) }) {
+                IconButton(onClick = onOpenSettings) {
                     QIcon(Icons.Filled.SettingsIcon, 20.dp)
                 }
             }
@@ -267,101 +267,6 @@ fun RestartScreen(onDone: () -> Unit) {
             0 -> Text(stringResource(R.string.restarting), color = Color.White, fontSize = 18.sp)
             2 -> AtomLogo(Modifier.size(72.dp), spin = true)
             else -> {}
-        }
-    }
-}
-
-// ---------- ロック画面(パスワード) ----------
-
-@Composable
-fun HexAvatar() {
-    Box(Modifier.size(96.dp), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.fillMaxSize()) {
-            val r = size.minDimension / 2f * 0.95f
-            val path = Path()
-            for (i in 0..5) {
-                val a = Math.toRadians(60.0 * i - 90.0).toFloat()
-                val p = Offset(center.x + r * cos(a), center.y + r * sin(a))
-                if (i == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y)
-            }
-            path.close()
-            drawPath(path, Color(0xFF1B1A24))
-            drawPath(path, Brush.linearGradient(listOf(QBlue, QViolet)), style = Stroke(2.dp.toPx()))
-        }
-        AtomLogo(Modifier.size(46.dp), spin = true)
-    }
-}
-
-@Composable
-fun LockScreen(
-    hasPassword: Boolean,
-    hour: String,
-    minute: String,
-    date: String,
-    onSetPassword: (String) -> Unit,
-    onCheck: (String) -> Boolean,
-    onUnlock: () -> Unit
-) {
-    var pw by remember { mutableStateOf("") }
-    var err by remember { mutableStateOf("") }
-    val tooShort = stringResource(R.string.pw_too_short)
-    val wrongPw = stringResource(R.string.pw_wrong)
-
-    fun submit() {
-        if (!hasPassword) {
-            if (pw.length >= 4) {
-                onSetPassword(pw)
-                onUnlock()
-            } else {
-                err = tooShort
-            }
-        } else if (onCheck(pw)) {
-            onUnlock()
-        } else {
-            err = wrongPw
-            pw = ""
-        }
-    }
-
-    Box(Modifier.fillMaxSize()) {
-        CosmicBackground()
-        Box(Modifier.fillMaxSize().background(Color(0x99000000)))
-        Column(
-            Modifier.align(Alignment.Center).padding(24.dp).imePadding(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row(verticalAlignment = Alignment.Top) {
-                Text(hour, color = Color(0xFFF4A6B8), fontSize = 88.sp, fontWeight = FontWeight.Black)
-                Text(
-                    minute, color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 14.dp)
-                )
-            }
-            Text(date, color = Color(0xAAFFFFFF), fontSize = 12.sp)
-            Spacer(Modifier.height(28.dp))
-            HexAvatar()
-            Spacer(Modifier.height(8.dp))
-            Text("Quantum", color = Color.White, fontSize = 13.sp)
-            Spacer(Modifier.height(14.dp))
-            TextField(
-                value = pw,
-                onValueChange = { pw = it; err = "" },
-                singleLine = true,
-                placeholder = { Text(stringResource(if (hasPassword) R.string.pw_enter else R.string.pw_new)) },
-                leadingIcon = { QIcon(Icons.Filled.Lock, 16.dp) },
-                trailingIcon = {
-                    IconButton(onClick = { submit() }) { QIcon(Icons.Filled.ArrowForward, 18.dp) }
-                },
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { submit() }),
-                shape = RoundedCornerShape(50),
-                colors = fieldColors(),
-                modifier = Modifier.width(280.dp)
-            )
-            if (err.isNotEmpty()) {
-                Text(err, color = Color(0xFFFF8A9B), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
-            }
         }
     }
 }
