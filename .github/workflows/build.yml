@@ -1,4 +1,4 @@
-name: Build APK
+name: Glowsdroid OS
 on:
   workflow_dispatch:
   push:
