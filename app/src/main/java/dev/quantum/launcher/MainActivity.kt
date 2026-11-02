@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +49,10 @@ import kotlinx.coroutines.withContext
 class MainActivity : ComponentActivity() {
     private var resumeTick by mutableIntStateOf(0)
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT),
@@ -63,7 +68,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-enum class Mode { Home, Search, Panel, Power, Sleep, Restart, Lock }
+enum class Mode { Home, Search, Panel, Power, Sleep, Restart, Lock, Settings }
 
 private const val MAX_DOCK = 12
 
@@ -106,7 +111,8 @@ fun QuantumApp(tick: Int) {
 
     var dock by remember { mutableStateOf(store.dock()) }
     var hasPw by remember { mutableStateOf(store.hasPw()) }
-    var mode by remember { mutableStateOf(if (Session.unlocked) Mode.Home else Mode.Lock) }
+    var mode by rememberSaveable { mutableStateOf(if (Session.unlocked) Mode.Home else Mode.Lock) }
+    var lang by remember { mutableStateOf(store.lang()) }
 
     val nm = remember { ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager }
     var dnd by remember { mutableStateOf(false) }
@@ -159,6 +165,13 @@ fun QuantumApp(tick: Int) {
         store.saveDock(dock)
     }
 
+    fun changeLang(tag: String) {
+        if (tag == lang) return
+        store.setLang(tag)
+        lang = tag
+        (ctx as? Activity)?.recreate()
+    }
+
     // アンインストール済みのアプリはバーに出さない
     val shownDock = if (apps.isEmpty()) dock else dock.filter { p -> apps.any { it.pkg == p } }
 
@@ -169,7 +182,9 @@ fun QuantumApp(tick: Int) {
                 hour = hh, minute = mm, date = date,
                 onSetPassword = { store.setPw(it); hasPw = true },
                 onCheck = { store.checkPw(it) },
-                onUnlock = { Session.unlocked = true; mode = Mode.Home }
+                onUnlock = { Session.unlocked = true; mode = Mode.Home },
+                lang = lang,
+                onLang = { changeLang(it) }
             )
             Mode.Sleep -> SleepScreen(onWake = { mode = Mode.Home })
             Mode.Restart -> RestartScreen(onDone = { Session.unlocked = false; mode = Mode.Lock })
@@ -202,7 +217,16 @@ fun QuantumApp(tick: Int) {
                         onClose = { mode = Mode.Home },
                         onToggle = { toggleDock(it) }
                     )
-                    Mode.Panel -> QuickPanel(battery = battery, onDismiss = { mode = Mode.Home })
+                    Mode.Panel -> QuickPanel(
+                        battery = battery,
+                        onDismiss = { mode = Mode.Home },
+                        onOpenSettings = { mode = Mode.Settings }
+                    )
+                    Mode.Settings -> SettingsScreen(
+                        currentLang = lang,
+                        onLang = { changeLang(it) },
+                        onClose = { mode = Mode.Home }
+                    )
                     Mode.Power -> PowerMenu(
                         time = "$hh:$mm",
                         onDismiss = { mode = Mode.Home },
