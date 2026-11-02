@@ -2,7 +2,10 @@ package dev.quantum.launcher
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
+import android.content.res.Resources
 import java.security.MessageDigest
+import java.util.Locale
 
 data class AppItem(val label: String, val pkg: String)
 
@@ -20,6 +23,9 @@ class Store(ctx: Context) {
     fun saveDock(list: List<String>) {
         sp.edit().putString("dock", list.joinToString(",")).apply()
     }
+
+    fun lang(): String = sp.getString("lang", "") ?: ""
+    fun setLang(tag: String) { sp.edit().putString("lang", tag).apply() }
 
     fun hasPw(): Boolean = sp.contains("pw")
     fun setPw(p: String) { sp.edit().putString("pw", hash(p)).apply() }
@@ -43,4 +49,20 @@ fun loadApps(ctx: Context): List<AppItem> {
 
 fun launchApp(ctx: Context, pkg: String) {
     ctx.packageManager.getLaunchIntentForPackage(pkg)?.let { ctx.startActivity(it) }
+}
+
+/** アプリ内の言語設定を反映する(空 = スマホの言語に合わせる) */
+object LocaleHelper {
+    fun wrap(ctx: Context): Context {
+        val tag = ctx.getSharedPreferences("quantum", Context.MODE_PRIVATE).getString("lang", "") ?: ""
+        if (tag.isEmpty()) {
+            Locale.setDefault(Resources.getSystem().configuration.locales[0])
+            return ctx
+        }
+        val locale = Locale.forLanguageTag(tag)
+        Locale.setDefault(locale)
+        val conf = Configuration(ctx.resources.configuration)
+        conf.setLocale(locale)
+        return ctx.createConfigurationContext(conf)
+    }
 }
