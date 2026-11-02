@@ -27,6 +27,9 @@ class Store(ctx: Context) {
     fun lang(): String = sp.getString("lang", "") ?: ""
     fun setLang(tag: String) { sp.edit().putString("lang", tag).apply() }
 
+    fun glass(): String = sp.getString("glass", "frosted") ?: "frosted"
+    fun setGlass(tag: String) { sp.edit().putString("glass", tag).apply() }
+
     fun hasPw(): Boolean = sp.contains("pw")
     fun setPw(p: String) { sp.edit().putString("pw", hash(p)).apply() }
     fun checkPw(p: String): Boolean = sp.getString("pw", null) == hash(p)
