@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -58,17 +59,19 @@ fun AtomLogo(modifier: Modifier = Modifier, spin: Boolean = false) {
     }
 }
 
-/** 宇宙っぽい背景:紫とシアンの星雲、またたく星、軌道を回る白い点 */
+/** 背景のアニメーションの時計(ガラスの中の背景とズレないように、みんなで共有する) */
+class CosmicClock(val orbit: State<Float>, val twinkle: State<Float>)
+
 @Composable
-fun CosmicBackground(modifier: Modifier = Modifier) {
+fun rememberCosmicClock(): CosmicClock {
     val t = rememberInfiniteTransition(label = "cosmic")
-    val orbit by t.animateFloat(
+    val orbit = t.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(16000, easing = LinearEasing)),
         label = "orbit"
     )
-    val twinkle by t.animateFloat(
+    val twinkle = t.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -77,12 +80,26 @@ fun CosmicBackground(modifier: Modifier = Modifier) {
         ),
         label = "twinkle"
     )
+    return remember { CosmicClock(orbit, twinkle) }
+}
+
+/** 時計を自分で作るバージョン(ロック画面などで使う) */
+@Composable
+fun CosmicBackground(modifier: Modifier = Modifier) {
+    CosmicBackground(rememberCosmicClock(), modifier)
+}
+
+/** 宇宙っぽい背景:紫とシアンの星雲、またたく星、軌道を回る白い点 */
+@Composable
+fun CosmicBackground(clock: CosmicClock, modifier: Modifier = Modifier) {
     val stars = remember {
         val r = Random(7)
         List(110) { Triple(r.nextFloat(), r.nextFloat(), r.nextFloat()) }
     }
 
     Canvas(modifier.fillMaxSize()) {
+        val orbit = clock.orbit.value
+        val twinkle = clock.twinkle.value
         drawRect(Color(0xFF0B0A12))
         drawRect(
             Brush.radialGradient(
