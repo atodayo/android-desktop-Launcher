@@ -90,6 +90,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -238,7 +239,7 @@ fun DockApp(pkg: String, onRemove: () -> Unit) {
         )
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
-                text = { Text("タスクバーから削除") },
+                text = { Text(stringResource(R.string.remove_from_dock)) },
                 onClick = { menu = false; onRemove() }
             )
         }
@@ -298,11 +299,11 @@ fun AppRow(app: AppItem, inDock: Boolean, onLaunch: () -> Unit, onToggle: () -> 
             AppIcon(app.pkg, 40.dp)
             Spacer(Modifier.width(14.dp))
             Text(app.label, color = Color.White, fontSize = 15.sp, maxLines = 1, modifier = Modifier.weight(1f))
-            if (inDock) Text("タスクバー", color = QViolet, fontSize = 11.sp)
+            if (inDock) Text(stringResource(R.string.dock_label), color = QViolet, fontSize = 11.sp)
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
-                text = { Text(if (inDock) "タスクバーから削除" else "タスクバーに追加") },
+                text = { Text(stringResource(if (inDock) R.string.remove_from_dock else R.string.add_to_dock)) },
                 onClick = { menu = false; onToggle() }
             )
         }
@@ -337,16 +338,16 @@ fun SearchScreen(
                 value = q,
                 onValueChange = { q = it },
                 singleLine = true,
-                placeholder = { Text("アプリを検索") },
+                placeholder = { Text(stringResource(R.string.search_placeholder)) },
                 leadingIcon = { QIcon(Icons.Filled.Search, 20.dp) },
                 shape = RoundedCornerShape(50),
                 colors = fieldColors(),
                 modifier = Modifier.weight(1f).focusRequester(fr)
             )
-            TextButton(onClick = onClose) { Text("閉じる", color = Color.White) }
+            TextButton(onClick = onClose) { Text(stringResource(R.string.close), color = Color.White) }
         }
         Text(
-            "長押しでタスクバーに追加・削除できるよ(最大12個)",
+            stringResource(R.string.search_hint),
             color = Color(0x99FFFFFF),
             fontSize = 11.sp,
             modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp)
