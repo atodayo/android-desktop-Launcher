@@ -26,4 +26,8 @@
     <string name="language">语言</string>
     <string name="lang_system">跟随系统</string>
     <string name="open_system_settings">打开 Android 设置</string>
+    <string name="glass_title">玻璃效果</string>
+    <string name="glass_off">关闭</string>
+    <string name="glass_frosted">磨砂玻璃</string>
+    <string name="glass_clear">透明玻璃</string>
 </resources>
