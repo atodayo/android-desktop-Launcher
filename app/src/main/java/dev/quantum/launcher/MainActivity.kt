@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -35,8 +36,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import java.time.LocalDateTime
@@ -113,6 +116,10 @@ fun QuantumApp(tick: Int) {
     var hasPw by remember { mutableStateOf(store.hasPw()) }
     var mode by rememberSaveable { mutableStateOf(if (Session.unlocked) Mode.Home else Mode.Lock) }
     var lang by remember { mutableStateOf(store.lang()) }
+    var glass by remember { mutableStateOf(GlassStyle.fromTag(store.glass())) }
+    var rootSize by remember { mutableStateOf(IntSize.Zero) }
+    val clock = rememberCosmicClock()
+    val backdrop = remember(clock) { Backdrop.Cosmic(clock) }
 
     val nm = remember { ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager }
     var dnd by remember { mutableStateOf(false) }
@@ -172,10 +179,20 @@ fun QuantumApp(tick: Int) {
         (ctx as? Activity)?.recreate()
     }
 
+    fun changeGlass(g: GlassStyle) {
+        glass = g
+        store.setGlass(g.tag)
+    }
+
     // アンインストール済みのアプリはバーに出さない
     val shownDock = if (apps.isEmpty()) dock else dock.filter { p -> apps.any { it.pkg == p } }
 
-    Box(Modifier.fillMaxSize().background(Color.Black)) {
+    CompositionLocalProvider(
+        LocalGlassStyle provides glass,
+        LocalBackdrop provides backdrop,
+        LocalRootSize provides rootSize
+    ) {
+    Box(Modifier.fillMaxSize().background(Color.Black).onSizeChanged { rootSize = it }) {
         when (mode) {
             Mode.Lock -> LockScreen(
                 hasPassword = hasPw,
@@ -189,7 +206,7 @@ fun QuantumApp(tick: Int) {
             Mode.Sleep -> SleepScreen(onWake = { mode = Mode.Home })
             Mode.Restart -> RestartScreen(onDone = { Session.unlocked = false; mode = Mode.Lock })
             else -> {
-                CosmicBackground()
+                CosmicBackground(clock)
                 TopBar(
                     date = date, time = "$hh:$mm", battery = battery, dnd = dnd,
                     onGroup = { mode = Mode.Panel },
@@ -225,6 +242,8 @@ fun QuantumApp(tick: Int) {
                     Mode.Settings -> SettingsScreen(
                         currentLang = lang,
                         onLang = { changeLang(it) },
+                        glass = glass,
+                        onGlass = { changeGlass(it) },
                         onClose = { mode = Mode.Home }
                     )
                     Mode.Power -> PowerMenu(
@@ -238,5 +257,6 @@ fun QuantumApp(tick: Int) {
                 }
             }
         }
+    }
     }
 }
