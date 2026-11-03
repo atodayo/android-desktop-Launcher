@@ -62,6 +62,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -111,17 +112,20 @@ fun QuickPanel(battery: Int, onDismiss: () -> Unit, onOpenSettings: () -> Unit) 
             .fillMaxSize()
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss)
     ) {
-        Column(
+        GlassBox(
             Modifier
                 .align(Alignment.TopEnd)
                 .statusBarsPadding()
                 .padding(top = 46.dp, end = 8.dp)
                 .fillMaxWidth(0.94f)
                 .widthIn(max = 340.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(Color(0xF01C1B26))
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
-                .padding(16.dp),
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
+            RoundedCornerShape(18.dp),
+            offFill = Color(0xF01C1B26),
+            extraDim = Color(0x33000000)
+        ) {
+        Column(
+            Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // 音量ゲージ(一番上)
@@ -175,6 +179,7 @@ fun QuickPanel(battery: Int, onDismiss: () -> Unit, onOpenSettings: () -> Unit) 
                 }
             }
         }
+        }
     }
 }
 
@@ -182,18 +187,25 @@ fun QuickPanel(battery: Int, onDismiss: () -> Unit, onOpenSettings: () -> Unit) 
 
 @Composable
 private fun PowerBtn(icon: ImageVector, label: String, highlight: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(20.dp)
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            Modifier
-                .size(66.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(
-                    brush = if (highlight) Brush.linearGradient(listOf(QBlue, QViolet)) else SolidColor(Color(0xFF26252E)),
-                    shape = RoundedCornerShape(20.dp)
-                )
-                .clickable(onClick = onClick),
-            contentAlignment = Alignment.Center
-        ) { QIcon(icon, 26.dp) }
+        if (highlight) {
+            Box(
+                Modifier
+                    .size(66.dp)
+                    .clip(shape)
+                    .background(brush = Brush.linearGradient(listOf(QBlue, QViolet)), shape = shape)
+                    .clickable(onClick = onClick),
+                contentAlignment = Alignment.Center
+            ) { QIcon(icon, 26.dp) }
+        } else {
+            GlassBox(
+                Modifier.size(66.dp).clip(shape).clickable(onClick = onClick),
+                shape,
+                offFill = Color(0xFF26252E),
+                contentAlignment = Alignment.Center
+            ) { QIcon(icon, 26.dp) }
+        }
         Text(label, color = Color(0xCCFFFFFF), fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
     }
 }
@@ -201,72 +213,9 @@ private fun PowerBtn(icon: ImageVector, label: String, highlight: Boolean, onCli
 @Composable
 fun PowerMenu(time: String, onDismiss: () -> Unit, onSleep: () -> Unit, onRestart: () -> Unit, onOff: () -> Unit) {
     BackHandler(onBack = onDismiss)
-    Box(
+    GlassBox(
         Modifier
             .fillMaxSize()
-            .background(Color(0xD9050508))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss)
-    ) {
-        Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(time, color = Color.White, fontSize = 46.sp, fontWeight = FontWeight.Bold)
-            Text(stringResource(R.string.power_bye), color = Color(0xAAFFFFFF), fontSize = 13.sp)
-            Spacer(Modifier.height(28.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                PowerBtn(Icons.Filled.Bedtime, stringResource(R.string.power_sleep), true, onSleep)
-                PowerBtn(Icons.Filled.RestartAlt, stringResource(R.string.power_restart), false, onRestart)
-                PowerBtn(Icons.Filled.PowerSettingsNew, stringResource(R.string.power_off), false, onOff)
-            }
-        }
-    }
-}
-
-// ---------- スリープ / 再起動 ----------
-
-@Composable
-fun SleepScreen(onWake: () -> Unit) {
-    var asked by remember { mutableStateOf(true) }
-    BackHandler {}
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { asked = true },
-        contentAlignment = Alignment.Center
-    ) {
-        if (asked) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(stringResource(R.string.sleep_message), color = Color.White, fontSize = 16.sp, textAlign = TextAlign.Center)
-                Spacer(Modifier.height(20.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(
-                        onClick = onWake,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B7CFF), contentColor = Color.White)
-                    ) { Text(stringResource(R.string.yes)) }
-                    OutlinedButton(
-                        onClick = { asked = false },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
-                    ) { Text(stringResource(R.string.no)) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun RestartScreen(onDone: () -> Unit) {
-    var phase by remember { mutableStateOf(0) }
-    BackHandler {}
-    LaunchedEffect(Unit) {
-        delay(2000); phase = 1   // 再起動中…
-        delay(1500); phase = 2   // 真っ黒
-        delay(2500)              // ロード中
-        onDone()
-    }
-    Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
-        when (phase) {
-            0 -> Text(stringResource(R.string.restarting), color = Color.White, fontSize = 18.sp)
-            2 -> AtomLogo(Modifier.size(72.dp), spin = true)
-            else -> {}
-        }
-    }
-}
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
+        RectangleShape,
+        offFill
