@@ -30,4 +30,8 @@
     <string name="glass_off">关闭</string>
     <string name="glass_frosted">磨砂玻璃</string>
     <string name="glass_clear">透明玻璃</string>
+    <string name="bg_title">背景</string>
+    <string name="bg_cosmic">宇宙(默认)</string>
+    <string name="bg_photo">我的照片</string>
+    <string name="bg_pick">选择照片…</string>
 </resources>
