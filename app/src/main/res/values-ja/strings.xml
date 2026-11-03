@@ -30,4 +30,8 @@
     <string name="glass_off">オフ</string>
     <string name="glass_frosted">すりガラス</string>
     <string name="glass_clear">透明ガラス</string>
+    <string name="bg_title">背景</string>
+    <string name="bg_cosmic">宇宙(標準)</string>
+    <string name="bg_photo">えらんだ写真</string>
+    <string name="bg_pick">写真をえらぶ…</string>
 </resources>
