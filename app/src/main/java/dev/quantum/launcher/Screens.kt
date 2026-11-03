@@ -85,6 +85,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -119,16 +120,16 @@ fun Pill(
     onClick: (() -> Unit)? = null,
     content: @Composable RowScope.() -> Unit
 ) {
-    var m = modifier
-        .clip(RoundedCornerShape(50))
-        .background(if (active) Color(0x778B7CFF) else Color(0x66000000))
-    if (onClick != null) m = m.clickable(onClick = onClick)
-    Row(
-        m.padding(horizontal = 9.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
-        content = content
-    )
+    var inner = Modifier.background(if (active) Color(0x778B7CFF) else Color.Transparent)
+    if (onClick != null) inner = inner.clickable(onClick = onClick)
+    GlassBox(modifier, RoundedCornerShape(50)) {
+        Row(
+            inner.padding(horizontal = 9.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            content = content
+        )
+    }
 }
 
 @Composable
@@ -248,12 +249,13 @@ fun DockApp(pkg: String, onRemove: () -> Unit) {
 
 @Composable
 fun Taskbar(dock: List<String>, maxW: Dp, onSearch: () -> Unit, onRemove: (String) -> Unit) {
+    GlassBox(
+        Modifier.widthIn(max = maxW).animateContentSize(),
+        RoundedCornerShape(22.dp),
+        offFill = Color(0xAA16151F)
+    ) {
     Row(
         Modifier
-            .widthIn(max = maxW)
-            .clip(RoundedCornerShape(22.dp))
-            .background(Color(0xAA16151F))
-            .animateContentSize()
             .horizontalScroll(rememberScrollState())
             .padding(5.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -279,6 +281,7 @@ fun Taskbar(dock: List<String>, maxW: Dp, onSearch: () -> Unit, onRemove: (Strin
         dock.forEach { pkg ->
             key(pkg) { DockApp(pkg) { onRemove(pkg) } }
         }
+    }
     }
 }
 
@@ -325,10 +328,15 @@ fun SearchScreen(
     val list = remember(apps, q) {
         if (q.isBlank()) apps else apps.filter { it.label.contains(q.trim(), ignoreCase = true) }
     }
+    GlassBox(
+        Modifier.fillMaxSize(),
+        RectangleShape,
+        offFill = Color(0xF2090912),
+        extraDim = Color(0x66000000)
+    ) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(Color(0xF2090912))
             .statusBarsPadding()
             .imePadding()
             .padding(horizontal = 14.dp, vertical = 10.dp)
@@ -362,5 +370,6 @@ fun SearchScreen(
                 )
             }
         }
+    }
     }
 }
