@@ -102,7 +102,7 @@ fun LockScreen(
     }
 
     Box(Modifier.fillMaxSize()) {
-        CosmicBackground()
+        LocalBackdrop.current?.let { BackdropLayer(it) }
         Box(Modifier.fillMaxSize().background(Color(0x99000000)))
         Column(
             Modifier.align(Alignment.Center).padding(24.dp).imePadding(),
