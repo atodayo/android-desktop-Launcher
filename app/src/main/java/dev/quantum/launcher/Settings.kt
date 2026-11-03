@@ -115,6 +115,9 @@ fun SettingsScreen(
     onLang: (String) -> Unit,
     glass: GlassStyle,
     onGlass: (GlassStyle) -> Unit,
+    bgMode: String,
+    onBgMode: (String) -> Unit,
+    onPickImage: () -> Unit,
     onClose: () -> Unit
 ) {
     val ctx = LocalContext.current
@@ -145,6 +148,12 @@ fun SettingsScreen(
             LANGS.forEach { tag ->
                 OptionRow(langName(tag), tag == currentLang) { onLang(tag) }
             }
+
+            Spacer(Modifier.height(16.dp))
+            SectionTitle(stringResource(R.string.bg_title))
+            OptionRow(stringResource(R.string.bg_cosmic), bgMode == "cosmic") { onBgMode("cosmic") }
+            OptionRow(stringResource(R.string.bg_photo), bgMode == "image") { onBgMode("image") }
+            OptionRow(stringResource(R.string.bg_pick), false) { onPickImage() }
 
             Spacer(Modifier.height(16.dp))
             SectionTitle(stringResource(R.string.glass_title))
