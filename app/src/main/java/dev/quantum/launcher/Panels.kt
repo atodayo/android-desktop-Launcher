@@ -218,4 +218,69 @@ fun PowerMenu(time: String, onDismiss: () -> Unit, onSleep: () -> Unit, onRestar
             .fillMaxSize()
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
         RectangleShape,
-        offFill
+        offFill = Color(0xD9050508),
+        extraDim = Color(0x80000000)
+    ) {
+        Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(time, color = Color.White, fontSize = 46.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.power_bye), color = Color(0xAAFFFFFF), fontSize = 13.sp)
+            Spacer(Modifier.height(28.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                PowerBtn(Icons.Filled.Bedtime, stringResource(R.string.power_sleep), true, onSleep)
+                PowerBtn(Icons.Filled.RestartAlt, stringResource(R.string.power_restart), false, onRestart)
+                PowerBtn(Icons.Filled.PowerSettingsNew, stringResource(R.string.power_off), false, onOff)
+            }
+        }
+    }
+}
+
+// ---------- スリープ / 再起動 ----------
+
+@Composable
+fun SleepScreen(onWake: () -> Unit) {
+    var asked by remember { mutableStateOf(true) }
+    BackHandler {}
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { asked = true },
+        contentAlignment = Alignment.Center
+    ) {
+        if (asked) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(stringResource(R.string.sleep_message), color = Color.White, fontSize = 16.sp, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(20.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = onWake,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B7CFF), contentColor = Color.White)
+                    ) { Text(stringResource(R.string.yes)) }
+                    OutlinedButton(
+                        onClick = { asked = false },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                    ) { Text(stringResource(R.string.no)) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun RestartScreen(onDone: () -> Unit) {
+    var phase by remember { mutableStateOf(0) }
+    BackHandler {}
+    LaunchedEffect(Unit) {
+        delay(2000); phase = 1   // 再起動中…
+        delay(1500); phase = 2   // 真っ黒
+        delay(2500)              // ロード中
+        onDone()
+    }
+    Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+        when (phase) {
+            0 -> Text(stringResource(R.string.restarting), color = Color.White, fontSize = 18.sp)
+            2 -> AtomLogo(Modifier.size(72.dp), spin = true)
+            else -> {}
+        }
+    }
+}
