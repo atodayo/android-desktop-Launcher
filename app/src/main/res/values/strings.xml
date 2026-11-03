@@ -30,4 +30,8 @@
     <string name="glass_off">Off</string>
     <string name="glass_frosted">Frosted glass</string>
     <string name="glass_clear">Clear glass</string>
+    <string name="bg_title">Background</string>
+    <string name="bg_cosmic">Cosmic (default)</string>
+    <string name="bg_photo">My photo</string>
+    <string name="bg_pick">Choose a photo…</string>
 </resources>
