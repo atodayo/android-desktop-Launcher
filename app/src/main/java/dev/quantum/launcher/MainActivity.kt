@@ -7,13 +7,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color as AndroidColor
+import android.net.Uri
 import android.os.BatteryManager
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -30,12 +33,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -47,6 +52,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
@@ -119,7 +125,30 @@ fun QuantumApp(tick: Int) {
     var glass by remember { mutableStateOf(GlassStyle.fromTag(store.glass())) }
     var rootSize by remember { mutableStateOf(IntSize.Zero) }
     val clock = rememberCosmicClock()
-    val backdrop = remember(clock) { Backdrop.Cosmic(clock) }
+
+    var bgMode by remember { mutableStateOf(getBgMode(ctx)) }
+    var bgImage by remember { mutableStateOf<ImageBitmap?>(null) }
+    var bgVersion by remember { mutableIntStateOf(0) }
+    LaunchedEffect(bgVersion) {
+        bgImage = withContext(Dispatchers.IO) { loadBgBitmap(ctx, 2200) }
+    }
+    val img = bgImage
+    val backdrop = remember(clock, bgMode, img) {
+        if (bgMode == "image" && img != null) Backdrop.Photo(img) else Backdrop.Cosmic(clock)
+    }
+
+    val scope = rememberCoroutineScope()
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                if (importImage(ctx, uri)) {
+                    setBgMode(ctx, "image")
+                    bgMode = "image"
+                    bgVersion++
+                }
+            }
+        }
+    }
 
     val nm = remember { ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager }
     var dnd by remember { mutableStateOf(false) }
@@ -179,6 +208,15 @@ fun QuantumApp(tick: Int) {
         (ctx as? Activity)?.recreate()
     }
 
+    fun changeBg(m: String) {
+        if (m == "image" && bgImage == null) {
+            picker.launch(arrayOf("image/*"))
+            return
+        }
+        bgMode = m
+        setBgMode(ctx, m)
+    }
+
     fun changeGlass(g: GlassStyle) {
         glass = g
         store.setGlass(g.tag)
@@ -206,7 +244,7 @@ fun QuantumApp(tick: Int) {
             Mode.Sleep -> SleepScreen(onWake = { mode = Mode.Home })
             Mode.Restart -> RestartScreen(onDone = { Session.unlocked = false; mode = Mode.Lock })
             else -> {
-                CosmicBackground(clock)
+                BackdropLayer(backdrop)
                 TopBar(
                     date = date, time = "$hh:$mm", battery = battery, dnd = dnd,
                     onGroup = { mode = Mode.Panel },
@@ -244,6 +282,9 @@ fun QuantumApp(tick: Int) {
                         onLang = { changeLang(it) },
                         glass = glass,
                         onGlass = { changeGlass(it) },
+                        bgMode = bgMode,
+                        onBgMode = { changeBg(it) },
+                        onPickImage = { picker.launch(arrayOf("image/*")) },
                         onClose = { mode = Mode.Home }
                     )
                     Mode.Power -> PowerMenu(
