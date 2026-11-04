@@ -34,4 +34,6 @@
     <string name="bg_cosmic">Cosmic (default)</string>
     <string name="bg_photo">My photo</string>
     <string name="bg_pick">Choose a photo…</string>
+    <string name="bg_video">Video</string>
+    <string name="bg_pick_video">Choose a video…</string>
 </resources>
