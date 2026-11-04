@@ -133,8 +133,14 @@ fun QuantumApp(tick: Int) {
         bgImage = withContext(Dispatchers.IO) { loadBgBitmap(ctx, 2200) }
     }
     val img = bgImage
-    val backdrop = remember(clock, bgMode, img) {
-        if (bgMode == "image" && img != null) Backdrop.Photo(img) else Backdrop.Cosmic(clock)
+    var hasVideo by remember { mutableStateOf(videoExists(ctx)) }
+    var videoVersion by remember { mutableIntStateOf(0) }
+    val backdrop = remember(clock, bgMode, img, hasVideo, videoVersion) {
+        when {
+            bgMode == "video" && hasVideo -> Backdrop.Video(videoFile(ctx), videoVersion)
+            bgMode == "image" && img != null -> Backdrop.Photo(img)
+            else -> Backdrop.Cosmic(clock)
+        }
     }
 
     val scope = rememberCoroutineScope()
@@ -145,6 +151,19 @@ fun QuantumApp(tick: Int) {
                     setBgMode(ctx, "image")
                     bgMode = "image"
                     bgVersion++
+                }
+            }
+        }
+    }
+
+    val videoPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                if (importVideo(ctx, uri)) {
+                    setBgMode(ctx, "video")
+                    bgMode = "video"
+                    hasVideo = true
+                    videoVersion++
                 }
             }
         }
@@ -211,6 +230,10 @@ fun QuantumApp(tick: Int) {
     fun changeBg(m: String) {
         if (m == "image" && bgImage == null) {
             picker.launch(arrayOf("image/*"))
+            return
+        }
+        if (m == "video" && !hasVideo) {
+            videoPicker.launch(arrayOf("video/*"))
             return
         }
         bgMode = m
@@ -285,6 +308,7 @@ fun QuantumApp(tick: Int) {
                         bgMode = bgMode,
                         onBgMode = { changeBg(it) },
                         onPickImage = { picker.launch(arrayOf("image/*")) },
+                        onPickVideo = { videoPicker.launch(arrayOf("video/*")) },
                         onClose = { mode = Mode.Home }
                     )
                     Mode.Power -> PowerMenu(
