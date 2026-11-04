@@ -118,6 +118,7 @@ fun SettingsScreen(
     bgMode: String,
     onBgMode: (String) -> Unit,
     onPickImage: () -> Unit,
+    onPickVideo: () -> Unit,
     onClose: () -> Unit
 ) {
     val ctx = LocalContext.current
@@ -154,6 +155,8 @@ fun SettingsScreen(
             OptionRow(stringResource(R.string.bg_cosmic), bgMode == "cosmic") { onBgMode("cosmic") }
             OptionRow(stringResource(R.string.bg_photo), bgMode == "image") { onBgMode("image") }
             OptionRow(stringResource(R.string.bg_pick), false) { onPickImage() }
+            OptionRow(stringResource(R.string.bg_video), bgMode == "video") { onBgMode("video") }
+            OptionRow(stringResource(R.string.bg_pick_video), false) { onPickVideo() }
 
             Spacer(Modifier.height(16.dp))
             SectionTitle(stringResource(R.string.glass_title))
