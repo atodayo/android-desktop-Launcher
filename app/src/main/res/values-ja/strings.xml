@@ -34,4 +34,6 @@
     <string name="bg_cosmic">宇宙(標準)</string>
     <string name="bg_photo">えらんだ写真</string>
     <string name="bg_pick">写真をえらぶ…</string>
+    <string name="bg_video">えらんだ動画</string>
+    <string name="bg_pick_video">動画をえらぶ…</string>
 </resources>
