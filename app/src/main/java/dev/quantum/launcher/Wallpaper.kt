@@ -12,7 +12,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** 背景のしゅるい: "cosmic"(標準の宇宙) か "image"(えらんだ写真) */
+/** 背景のしゅるい: "cosmic"(標準の宇宙)・"image"(えらんだ写真)・"video"(えらんだ動画) */
 fun getBgMode(ctx: Context): String =
     ctx.getSharedPreferences("quantum", Context.MODE_PRIVATE).getString("bg_mode", "cosmic") ?: "cosmic"
 
@@ -52,4 +52,21 @@ fun loadBgBitmap(ctx: Context, maxSide: Int): ImageBitmap? {
             BitmapFactory.decodeFile(f.path)?.asImageBitmap()
         }
     }.getOrNull()
+}
+
+// ---------- 動画 ----------
+
+fun videoFile(ctx: Context) = File(ctx.filesDir, "bg_video")
+
+fun videoExists(ctx: Context): Boolean = videoFile(ctx).exists()
+
+/** えらんだ動画を、アプリの中にコピーする(大きいと少し時間がかかるよ) */
+suspend fun importVideo(ctx: Context, uri: Uri): Boolean = withContext(Dispatchers.IO) {
+    runCatching {
+        val tmp = File(ctx.filesDir, "bg_video.tmp")
+        ctx.contentResolver.openInputStream(uri)!!.use { input ->
+            tmp.outputStream().use { out -> input.copyTo(out) }
+        }
+        tmp.renameTo(videoFile(ctx))
+    }.getOrDefault(false)
 }
