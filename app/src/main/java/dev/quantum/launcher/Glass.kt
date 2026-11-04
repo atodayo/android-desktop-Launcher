@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import java.io.File
 import kotlin.math.roundToInt
 
 /** ガラスの種類 */
@@ -48,10 +49,11 @@ enum class GlassStyle(val tag: String) {
     }
 }
 
-/** ガラスの後ろに見せる背景(宇宙の背景か、えらんだ写真) */
+/** ガラスの後ろに見せる背景(宇宙の背景・写真・動画) */
 sealed interface Backdrop {
     class Cosmic(val clock: CosmicClock) : Backdrop
     class Photo(val bitmap: ImageBitmap) : Backdrop
+    class Video(val file: File, val version: Int) : Backdrop
 }
 
 val LocalGlassStyle = compositionLocalOf { GlassStyle.Frosted }
@@ -70,6 +72,10 @@ fun BackdropLayer(b: Backdrop, modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
+            Box(Modifier.fillMaxSize().background(Color(0x22000000)))
+        }
+        is Backdrop.Video -> Box(modifier.fillMaxSize()) {
+            VideoBackground(b.file, b.version)
             Box(Modifier.fillMaxSize().background(Color(0x22000000)))
         }
     }
@@ -98,6 +104,8 @@ fun GlassBox(
     var panel by remember { mutableStateOf(IntSize.Zero) }
     val glassOn = style != GlassStyle.Off && backdrop != null && root.width > 0 && root.height > 0
     val frosted = style == GlassStyle.Frosted
+    // 動画のときは、背景のコピーを作れないので、ぼかしなし(半透明+ふちの光)にするよ
+    val isVideo = backdrop is Backdrop.Video
 
     // ふちの丸みを、形から調べる
     val radiusPx = remember(panel, shape) {
@@ -154,22 +162,30 @@ fun GlassBox(
                     scaleY = 1.06f
                 }
             }
-            // 後ろの背景を、この板の場所に合わせて重ねる
-            Box(Modifier.matchParentSize().then(layerMod)) {
-                Box(
-                    Modifier.layout { measurable, constraints ->
-                        val p = measurable.measure(Constraints.fixed(root.width, root.height))
-                        layout(constraints.maxWidth, constraints.maxHeight) {
-                            p.place(-pos.x.roundToInt(), -pos.y.roundToInt())
+            // 後ろの背景を、この板の場所に合わせて重ねる(動画のときはなし)
+            if (!isVideo) {
+                Box(Modifier.matchParentSize().then(layerMod)) {
+                    Box(
+                        Modifier.layout { measurable, constraints ->
+                            val p = measurable.measure(Constraints.fixed(root.width, root.height))
+                            layout(constraints.maxWidth, constraints.maxHeight) {
+                                p.place(-pos.x.roundToInt(), -pos.y.roundToInt())
+                            }
                         }
-                    }
-                ) { BackdropLayer(backdrop) }
+                    ) { BackdropLayer(backdrop) }
+                }
             }
             // 色のうすい膜
             Box(
                 Modifier
                     .matchParentSize()
-                    .background(if (frosted) Color(0x22000000) else Color(0x08FFFFFF))
+                    .background(
+                        if (frosted) {
+                            if (isVideo) Color(0x66000000) else Color(0x22000000)
+                        } else {
+                            if (isVideo) Color(0x22000000) else Color(0x08FFFFFF)
+                        }
+                    )
             )
             if (frosted) {
                 Box(Modifier.matchParentSize().background(Color(0x14FFFFFF)))
