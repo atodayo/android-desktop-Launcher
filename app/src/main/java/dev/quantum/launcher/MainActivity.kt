@@ -135,9 +135,10 @@ fun QuantumApp(tick: Int) {
     val img = bgImage
     var hasVideo by remember { mutableStateOf(videoExists(ctx)) }
     var videoVersion by remember { mutableIntStateOf(0) }
+    val videoFrames = remember { VideoFrames() }
     val backdrop = remember(clock, bgMode, img, hasVideo, videoVersion) {
         when {
-            bgMode == "video" && hasVideo -> Backdrop.Video(videoFile(ctx), videoVersion)
+            bgMode == "video" && hasVideo -> Backdrop.Video(videoFile(ctx), videoVersion, videoFrames)
             bgMode == "image" && img != null -> Backdrop.Photo(img)
             else -> Backdrop.Cosmic(clock)
         }
