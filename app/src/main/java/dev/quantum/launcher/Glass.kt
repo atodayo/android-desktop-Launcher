@@ -53,7 +53,13 @@ enum class GlassStyle(val tag: String) {
 sealed interface Backdrop {
     class Cosmic(val clock: CosmicClock) : Backdrop
     class Photo(val bitmap: ImageBitmap) : Backdrop
-    class Video(val file: File, val version: Int) : Backdrop
+    class Video(val file: File, val version: Int, val frames: VideoFrames) : Backdrop
+}
+
+/** 透明ガラスがちゃんと動いてるか確かめるためのメモ(設定画面に出るよ) */
+object GlassDiag {
+    @Volatile
+    var liquid: String = "-"
 }
 
 val LocalGlassStyle = compositionLocalOf { GlassStyle.Frosted }
@@ -75,9 +81,21 @@ fun BackdropLayer(b: Backdrop, modifier: Modifier = Modifier) {
             Box(Modifier.fillMaxSize().background(Color(0x22000000)))
         }
         is Backdrop.Video -> Box(modifier.fillMaxSize()) {
-            VideoBackground(b.file, b.version)
+            VideoBackground(b.file, b.version, b.frames)
             Box(Modifier.fillMaxSize().background(Color(0x22000000)))
         }
+    }
+}
+
+/** ガラスの後ろに重ねる背景のコピー(動画のときは、動画の1コマを使うよ) */
+@Composable
+fun BackdropCopy(b: Backdrop) {
+    when (b) {
+        is Backdrop.Video -> Box(Modifier.fillMaxSize()) {
+            VideoFrameImage(b.frames)
+            Box(Modifier.fillMaxSize().background(Color(0x22000000)))
+        }
+        else -> BackdropLayer(b)
     }
 }
 
@@ -104,8 +122,6 @@ fun GlassBox(
     var panel by remember { mutableStateOf(IntSize.Zero) }
     val glassOn = style != GlassStyle.Off && backdrop != null && root.width > 0 && root.height > 0
     val frosted = style == GlassStyle.Frosted
-    // 動画のときは、背景のコピーを作れないので、ぼかしなし(半透明+ふちの光)にするよ
-    val isVideo = backdrop is Backdrop.Video
 
     // ふちの丸みを、形から調べる
     val radiusPx = remember(panel, shape) {
@@ -132,6 +148,10 @@ fun GlassBox(
         remember(panel, radiusPx) {
             runCatching {
                 liquidEffect(panel.width.toFloat(), panel.height.toFloat(), radiusPx)
+            }.onSuccess {
+                GlassDiag.liquid = "ok"
+            }.onFailure {
+                GlassDiag.liquid = "error: " + it.javaClass.simpleName + ": " + it.message
             }.getOrNull()
         }
     } else {
@@ -162,30 +182,22 @@ fun GlassBox(
                     scaleY = 1.06f
                 }
             }
-            // 後ろの背景を、この板の場所に合わせて重ねる(動画のときはなし)
-            if (!isVideo) {
-                Box(Modifier.matchParentSize().then(layerMod)) {
-                    Box(
-                        Modifier.layout { measurable, constraints ->
-                            val p = measurable.measure(Constraints.fixed(root.width, root.height))
-                            layout(constraints.maxWidth, constraints.maxHeight) {
-                                p.place(-pos.x.roundToInt(), -pos.y.roundToInt())
-                            }
+            // 後ろの背景を、この板の場所に合わせて重ねる
+            Box(Modifier.matchParentSize().then(layerMod)) {
+                Box(
+                    Modifier.layout { measurable, constraints ->
+                        val p = measurable.measure(Constraints.fixed(root.width, root.height))
+                        layout(constraints.maxWidth, constraints.maxHeight) {
+                            p.place(-pos.x.roundToInt(), -pos.y.roundToInt())
                         }
-                    ) { BackdropLayer(backdrop) }
-                }
+                    }
+                ) { BackdropCopy(backdrop) }
             }
             // 色のうすい膜
             Box(
                 Modifier
                     .matchParentSize()
-                    .background(
-                        if (frosted) {
-                            if (isVideo) Color(0x66000000) else Color(0x22000000)
-                        } else {
-                            if (isVideo) Color(0x22000000) else Color(0x08FFFFFF)
-                        }
-                    )
+                    .background(if (frosted) Color(0x22000000) else Color(0x08FFFFFF))
             )
             if (frosted) {
                 Box(Modifier.matchParentSize().background(Color(0x14FFFFFF)))
