@@ -60,6 +60,9 @@ sealed interface Backdrop {
 object GlassDiag {
     @Volatile
     var liquid: String = "-"
+
+    @Volatile
+    var video: String = "-"
 }
 
 val LocalGlassStyle = compositionLocalOf { GlassStyle.Frosted }
