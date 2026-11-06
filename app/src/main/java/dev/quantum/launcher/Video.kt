@@ -27,6 +27,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
@@ -84,6 +85,20 @@ fun VideoBackground(file: File, version: Int, frames: VideoFrames, modifier: Mod
 
     DisposableEffect(player, lifecycleOwner) {
         val listener = object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                GlassDiag.video = "error: " + error.errorCodeName
+            }
+
+            override fun onPlaybackStateChanged(state: Int) {
+                GlassDiag.video = when (state) {
+                    Player.STATE_IDLE -> "idle"
+                    Player.STATE_BUFFERING -> "buffering"
+                    Player.STATE_READY -> "ready"
+                    Player.STATE_ENDED -> "ended"
+                    else -> "?"
+                }
+            }
+
             override fun onVideoSizeChanged(size: VideoSize) {
                 if (size.width > 0 && size.height > 0) {
                     videoSize = IntSize(
@@ -112,26 +127,31 @@ fun VideoBackground(file: File, version: Int, frames: VideoFrames, modifier: Mod
     }
 
     // 画面いっぱいに(はみ出した分はカットして)動画を出す
+    // ※ 動画の大きさがわかる前から、TextureViewを先に作っておく(これがないと動画が始まらないよ)
     BoxWithConstraints(
         modifier.fillMaxSize().clipToBounds(),
         contentAlignment = Alignment.Center
     ) {
-        if (videoSize.width > 0 && videoSize.height > 0) {
-            val rootW = constraints.maxWidth.toFloat()
-            val rootH = constraints.maxHeight.toFloat()
+        val rootW = constraints.maxWidth.toFloat()
+        val rootH = constraints.maxHeight.toFloat()
+        val known = videoSize.width > 0 && videoSize.height > 0
+        val sizeMod = if (known) {
             val s = maxOf(rootW / videoSize.width, rootH / videoSize.height)
-            AndroidView(
-                factory = { c -> TextureView(c) },
-                update = { tv ->
-                    player.setVideoTextureView(tv)
-                    if (textureView !== tv) textureView = tv
-                },
-                modifier = Modifier.requiredSize(
-                    with(density) { (videoSize.width * s).toDp() },
-                    with(density) { (videoSize.height * s).toDp() }
-                )
+            Modifier.requiredSize(
+                with(density) { (videoSize.width * s).toDp() },
+                with(density) { (videoSize.height * s).toDp() }
             )
+        } else {
+            Modifier.fillMaxSize()
         }
+        AndroidView(
+            factory = { c -> TextureView(c) },
+            update = { tv ->
+                player.setVideoTextureView(tv)
+                if (textureView !== tv) textureView = tv
+            },
+            modifier = sizeMod
+        )
     }
 
     // ガラス用に、動画の1コマを小さくして、ときどき取る
