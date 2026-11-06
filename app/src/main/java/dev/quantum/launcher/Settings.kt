@@ -1,5 +1,6 @@
 package dev.quantum.launcher
 
+import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
