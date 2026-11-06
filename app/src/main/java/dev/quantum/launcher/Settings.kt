@@ -164,6 +164,11 @@ fun SettingsScreen(
             GlassStyle.values().forEach { g ->
                 OptionRow(glassName(g), g == glass) { onGlass(g) }
             }
+                        Text(
+                "API " + Build.VERSION.SDK_INT + " / liquid: " + GlassDiag.liquid + " / video: " + GlassDiag.video,
+                color = Color(0x99FFFFFF), fontSize = 10.sp,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            )
 
             Spacer(Modifier.height(20.dp))
             Row(
