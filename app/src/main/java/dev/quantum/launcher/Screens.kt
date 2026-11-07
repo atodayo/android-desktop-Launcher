@@ -105,6 +105,20 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlinx.coroutines.delay
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.zIndex
+import kotlinx.coroutines.launch
 
 // ---------- 共通パーツ ----------
 
@@ -223,20 +237,87 @@ fun TopBar(
 
 // ---------- タスクバー ----------
 
+/** アイコン1つぶんの横はば(アイコン34dp + 左右の余白5dpずつ) */
+private val DOCK_PITCH = 44.dp
+
 @Composable
-fun DockApp(pkg: String, onRemove: () -> Unit) {
+fun DockApp(
+    pkg: String,
+    liftTarget: Float,
+    dragging: Boolean,
+    dragOffset: Float,
+    onDragStart: () -> Unit,
+    onDrag: (Float) -> Unit,
+    onDragEnd: () -> Unit,
+    onRemove: () -> Unit
+) {
     val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val slop = LocalViewConfiguration.current.touchSlop
     var menu by remember { mutableStateOf(false) }
-    Box {
+    var moved by remember { mutableStateOf(false) }
+    var suppress by remember { mutableStateOf(false) }
+
+    // 指(マウス)の近くのアイコンが、ふわっと上がる。つかんだアイコンは、もっと上がって少し大きくなる
+    val lift by animateFloatAsState(
+        targetValue = if (dragging) 10f else liftTarget,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 400f),
+        label = "dockLift"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (dragging) 1.15f else 1f,
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = 500f),
+        label = "dockScale"
+    )
+
+    Box(
+        Modifier
+            .zIndex(if (dragging) 1f else 0f)
+            .graphicsLayer {
+                translationY = -lift * density
+                translationX = if (dragging) dragOffset else 0f
+                scaleX = scale
+                scaleY = scale
+            }
+    ) {
         AppIcon(
             pkg, 34.dp,
             Modifier
                 .padding(5.dp)
                 .clip(RoundedCornerShape(9.dp))
-                .combinedClickable(
-                    onClick = { launchApp(ctx, pkg) },
-                    onLongClick = { menu = true }
-                )
+                .clickable { if (!suppress) launchApp(ctx, pkg) }
+                .pointerInput(pkg) {
+                    var total = 0f
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = {
+                            total = 0f
+                            moved = false
+                            suppress = true
+                            onDragStart()
+                        },
+                        onDrag = { change, amount ->
+                            change.consume()
+                            total += amount.x
+                            if (kotlin.math.abs(total) > slop) moved = true
+                            onDrag(amount.x)
+                        },
+                        onDragEnd = {
+                            if (!moved) menu = true
+                            onDragEnd()
+                            scope.launch {
+                                delay(300)
+                                suppress = false
+                            }
+                        },
+                        onDragCancel = {
+                            onDragEnd()
+                            scope.launch {
+                                delay(300)
+                                suppress = false
+                            }
+                        }
+                    )
+                }
         )
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
@@ -248,7 +329,31 @@ fun DockApp(pkg: String, onRemove: () -> Unit) {
 }
 
 @Composable
-fun Taskbar(dock: List<String>, maxW: Dp, onSearch: () -> Unit, onRemove: (String) -> Unit) {
+fun Taskbar(
+    dock: List<String>,
+    maxW: Dp,
+    onSearch: () -> Unit,
+    onRemove: (String) -> Unit,
+    onMove: (String, String) -> Unit,
+    onCommit: () -> Unit
+) {
+    val density = LocalDensity.current
+    val pitch = with(density) { DOCK_PITCH.toPx() }
+    val pad = with(density) { 5.dp.toPx() }
+    val sepW = with(density) { 9.dp.toPx() }
+
+    var pointerX by remember { mutableStateOf<Float?>(null) }
+    var draggingPkg by remember { mutableStateOf<String?>(null) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
+    val currentDock by rememberUpdatedState(dock)
+
+    // 指(マウス)のいちばん近くが一番たかく、はなれるほどひくくなる
+    fun liftFor(centerX: Float): Float {
+        val p = pointerX ?: return 0f
+        val d = kotlin.math.abs(p - centerX) / pitch
+        return if (d > 2.6f) 0f else 7f * kotlin.math.exp(-(d / 1.4f) * (d / 1.4f))
+    }
+
     GlassBox(
         Modifier.widthIn(max = maxW).animateContentSize(),
         RoundedCornerShape(22.dp),
@@ -257,12 +362,31 @@ fun Taskbar(dock: List<String>, maxW: Dp, onSearch: () -> Unit, onRemove: (Strin
     Row(
         Modifier
             .horizontalScroll(rememberScrollState())
-            .padding(5.dp),
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val ev = awaitPointerEvent(PointerEventPass.Initial)
+                        val c = ev.changes.firstOrNull()
+                        pointerX = when {
+                            c == null || ev.type == PointerEventType.Exit -> null
+                            c.type == PointerType.Touch -> if (c.pressed) c.position.x else null
+                            else -> c.position.x
+                        }
+                    }
+                }
+            }
+            .padding(horizontal = 5.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val searchLift by animateFloatAsState(
+            targetValue = liftFor(pad + pitch / 2f),
+            animationSpec = spring(dampingRatio = 0.55f, stiffness = 400f),
+            label = "searchLift"
+        )
         Box(
             Modifier
                 .size(44.dp)
+                .graphicsLayer { translationY = -searchLift * density }
                 .clip(RoundedCornerShape(14.dp))
                 .clickable(onClick = onSearch),
             contentAlignment = Alignment.Center
@@ -278,8 +402,38 @@ fun Taskbar(dock: List<String>, maxW: Dp, onSearch: () -> Unit, onRemove: (Strin
                     .background(Color(0x33FFFFFF))
             )
         }
-        dock.forEach { pkg ->
-            key(pkg) { DockApp(pkg) { onRemove(pkg) } }
+        dock.forEachIndexed { i, pkg ->
+            key(pkg) {
+                val cx = pad + pitch + (if (dock.isNotEmpty()) sepW else 0f) + i * pitch + pitch / 2f
+                DockApp(
+                    pkg = pkg,
+                    liftTarget = liftFor(cx),
+                    dragging = draggingPkg == pkg,
+                    dragOffset = if (draggingPkg == pkg) dragOffset else 0f,
+                    onDragStart = {
+                        draggingPkg = pkg
+                        dragOffset = 0f
+                    },
+                    onDrag = { dx ->
+                        dragOffset += dx
+                        val list = currentDock
+                        val idx = list.indexOf(pkg)
+                        if (dragOffset > pitch / 2f && idx >= 0 && idx < list.lastIndex) {
+                            onMove(pkg, list[idx + 1])
+                            dragOffset -= pitch
+                        } else if (dragOffset < -pitch / 2f && idx > 0) {
+                            onMove(pkg, list[idx - 1])
+                            dragOffset += pitch
+                        }
+                    },
+                    onDragEnd = {
+                        draggingPkg = null
+                        dragOffset = 0f
+                        onCommit()
+                    },
+                    onRemove = { onRemove(pkg) }
+                )
+            }
         }
     }
     }
