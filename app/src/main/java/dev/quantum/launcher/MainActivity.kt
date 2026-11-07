@@ -286,7 +286,15 @@ fun QuantumApp(tick: Int) {
                             dock = shownDock,
                             maxW = this@BoxWithConstraints.maxWidth - 24.dp,
                             onSearch = { mode = Mode.Search },
-                            onRemove = { toggleDock(it) }
+                            onRemove = { toggleDock(it) },
+                            onMove = { a, b ->
+                                val ia = dock.indexOf(a)
+                                val ib = dock.indexOf(b)
+                                if (ia >= 0 && ib >= 0) {
+                                    dock = dock.toMutableList().also { it.add(ib, it.removeAt(ia)) }
+                                }
+                            },
+                            onCommit = { store.saveDock(dock) }
                         )
                     }
                 }
