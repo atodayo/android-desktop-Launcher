@@ -337,10 +337,10 @@ fun Taskbar(
     onMove: (String, String) -> Unit,
     onCommit: () -> Unit
 ) {
-    val density = LocalDensity.current
-    val pitch = with(density) { DOCK_PITCH.toPx() }
-    val pad = with(density) { 5.dp.toPx() }
-    val sepW = with(density) { 9.dp.toPx() }
+    val dens = LocalDensity.current
+    val pitch = with(dens) { DOCK_PITCH.toPx() }
+    val pad = with(dens) { 5.dp.toPx() }
+    val sepW = with(dens) { 9.dp.toPx() }
 
     var pointerX by remember { mutableStateOf<Float?>(null) }
     var draggingPkg by remember { mutableStateOf<String?>(null) }
