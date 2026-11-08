@@ -134,11 +134,12 @@ fun Pill(
     onClick: (() -> Unit)? = null,
     content: @Composable RowScope.() -> Unit
 ) {
-    var inner = Modifier.background(if (active) Color(0x778B7CFF) else Color.Transparent)
-    if (onClick != null) inner = inner.clickable(onClick = onClick)
-    GlassBox(modifier, RoundedCornerShape(50)) {
+    val m = if (onClick != null) modifier.bounceClickable(onClick) else modifier
+    GlassBox(m, RoundedCornerShape(50)) {
         Row(
-            inner.padding(horizontal = 9.dp, vertical = 6.dp),
+            Modifier
+                .background(if (active) Color(0x778B7CFF) else Color.Transparent)
+                .padding(horizontal = 9.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             content = content
@@ -258,6 +259,16 @@ fun DockApp(
     var moved by remember { mutableStateOf(false) }
     var suppress by remember { mutableStateOf(false) }
 
+    // アプリを足したとき、ぽんっと出て、消すとき、ぷしゅっと縮む
+    var entered by remember { mutableStateOf(false) }
+    var removing by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { entered = true }
+    val appear by animateFloatAsState(
+        targetValue = if (entered && !removing) 1f else 0f,
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = 380f),
+        label = "dockAppear"
+    )
+
     // 指(マウス)の近くのアイコンが、ふわっと上がる。つかんだアイコンは、もっと上がって少し大きくなる
     val lift by animateFloatAsState(
         targetValue = if (dragging) 10f else liftTarget,
@@ -274,10 +285,12 @@ fun DockApp(
         Modifier
             .zIndex(if (dragging) 1f else 0f)
             .graphicsLayer {
+                val ap = 0.4f + 0.6f * appear
                 translationY = -lift * density
                 translationX = if (dragging) dragOffset else 0f
-                scaleX = scale
-                scaleY = scale
+                scaleX = scale * ap
+                scaleY = scale * ap
+                alpha = appear.coerceIn(0f, 1f)
             }
     ) {
         AppIcon(
@@ -322,7 +335,14 @@ fun DockApp(
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.remove_from_dock)) },
-                onClick = { menu = false; onRemove() }
+                onClick = {
+                    menu = false
+                    removing = true
+                    scope.launch {
+                        delay(200)
+                        onRemove()
+                    }
+                }
             )
         }
     }
@@ -385,10 +405,10 @@ fun Taskbar(
         )
         Box(
             Modifier
+                .bounceClickable(onSearch)
                 .size(44.dp)
                 .graphicsLayer { translationY = -searchLift * density }
-                .clip(RoundedCornerShape(14.dp))
-                .clickable(onClick = onSearch),
+                .clip(RoundedCornerShape(14.dp)),
             contentAlignment = Alignment.Center
         ) {
             QIcon(Icons.Filled.Search, 22.dp)
@@ -506,24 +526,4 @@ fun SearchScreen(
                 colors = fieldColors(),
                 modifier = Modifier.weight(1f).focusRequester(fr)
             )
-            TextButton(onClick = onClose) { Text(stringResource(R.string.close), color = Color.White) }
-        }
-        Text(
-            stringResource(R.string.search_hint),
-            color = Color(0x99FFFFFF),
-            fontSize = 11.sp,
-            modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp)
-        )
-        LazyColumn(Modifier.fillMaxSize()) {
-            items(list, key = { it.pkg }) { app ->
-                AppRow(
-                    app = app,
-                    inDock = app.pkg in dock,
-                    onLaunch = { launchApp(ctx, app.pkg); onClose() },
-                    onToggle = { onToggle(app.pkg) }
-                )
-            }
-        }
-    }
-    }
-}
+            TextButton(onClick = onClos
