@@ -99,9 +99,9 @@ private fun SectionTitle(text: String) {
 private fun OptionRow(label: String, selected: Boolean, onClick: () -> Unit) {
     Row(
         Modifier
+            .bounceClickable(onClick)
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
