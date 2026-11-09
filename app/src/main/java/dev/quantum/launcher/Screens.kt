@@ -526,4 +526,24 @@ fun SearchScreen(
                 colors = fieldColors(),
                 modifier = Modifier.weight(1f).focusRequester(fr)
             )
-            TextButton(onClick = onClos
+            TextButton(onClick = onClose) { Text(stringResource(R.string.close), color = Color.White) }
+        }
+        Text(
+            stringResource(R.string.search_hint),
+            color = Color(0x99FFFFFF),
+            fontSize = 11.sp,
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp)
+        )
+        LazyColumn(Modifier.fillMaxSize()) {
+            items(list, key = { it.pkg }) { app ->
+                AppRow(
+                    app = app,
+                    inDock = app.pkg in dock,
+                    onLaunch = { launchApp(ctx, app.pkg); onClose() },
+                    onToggle = { onToggle(app.pkg) }
+                )
+            }
+        }
+    }
+    }
+}
