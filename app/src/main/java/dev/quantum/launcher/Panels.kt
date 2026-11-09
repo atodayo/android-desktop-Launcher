@@ -88,11 +88,11 @@ private fun Tile(icon: ImageVector, label: String, modifier: Modifier, onClick: 
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
+                .bounceClickable(onClick)
                 .fillMaxWidth()
                 .height(52.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(Color(0x22FFFFFF))
-                .clickable(onClick = onClick),
+                .background(Color(0x22FFFFFF)),
             contentAlignment = Alignment.Center
         ) { QIcon(icon, 22.dp) }
         Text(label, color = Color.White, fontSize = 11.sp, maxLines = 1, modifier = Modifier.padding(top = 5.dp))
@@ -192,15 +192,15 @@ private fun PowerBtn(icon: ImageVector, label: String, highlight: Boolean, onCli
         if (highlight) {
             Box(
                 Modifier
+                    .bounceClickable(onClick)
                     .size(66.dp)
                     .clip(shape)
-                    .background(brush = Brush.linearGradient(listOf(QBlue, QViolet)), shape = shape)
-                    .clickable(onClick = onClick),
+                    .background(brush = Brush.linearGradient(listOf(QBlue, QViolet)), shape = shape),
                 contentAlignment = Alignment.Center
             ) { QIcon(icon, 26.dp) }
         } else {
             GlassBox(
-                Modifier.size(66.dp).clip(shape).clickable(onClick = onClick),
+                Modifier.bounceClickable(onClick).size(66.dp).clip(shape),
                 shape,
                 offFill = Color(0xFF26252E),
                 contentAlignment = Alignment.Center
