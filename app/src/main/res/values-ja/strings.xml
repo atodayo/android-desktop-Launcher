@@ -19,10 +19,10 @@
     <string name="pw_new">新しいパスワードを決めてね</string>
     <string name="pw_too_short">4文字以上にしてね</string>
     <string name="pw_wrong">パスワードがちがうよ</string>
-    <string name="toast_dnd_access">「Quantum」に通知ポリシーのアクセスを許可してね</string>
+    <string name="toast_dnd_access">「Atlas Launcher」に通知ポリシーのアクセスを許可してね</string>
     <string name="toast_dock_full">タスクバーはいっぱいだよ(最大%d個)</string>
     <string name="date_format">M/d(E)</string>
-    <string name="settings_title">Quantum設定</string>
+    <string name="settings_title">Atlas設定</string>
     <string name="language">言語</string>
     <string name="lang_system">スマホの言語に合わせる</string>
     <string name="open_system_settings">Androidの設定を開く</string>
