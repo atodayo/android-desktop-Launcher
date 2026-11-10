@@ -8,7 +8,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "dev.quantum.launcher"
+        applicationId = "dev.atlas.launcher"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
