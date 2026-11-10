@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">Atlas Launcher</string>
+    <string name="app_short">Atlas</string>
     <string name="remove_from_dock">Remove from taskbar</string>
     <string name="add_to_dock">Add to taskbar</string>
     <string name="dock_label">Taskbar</string>
@@ -19,10 +21,10 @@
     <string name="pw_new">Set a new password</string>
     <string name="pw_too_short">Use at least 4 characters</string>
     <string name="pw_wrong">Wrong password</string>
-    <string name="toast_dnd_access">Please allow Do Not Disturb access for Quantum</string>
+    <string name="toast_dnd_access">Please allow Do Not Disturb access for Atlas Launcher</string>
     <string name="toast_dock_full">The taskbar is full (max %d)</string>
     <string name="date_format">EEE, M/d</string>
-    <string name="settings_title">Quantum Settings</string>
+    <string name="settings_title">Atlas Settings</string>
     <string name="language">Language</string>
     <string name="lang_system">System default</string>
     <string name="open_system_settings">Open Android settings</string>
