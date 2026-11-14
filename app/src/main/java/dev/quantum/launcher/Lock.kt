@@ -46,6 +46,9 @@ import kotlin.math.cos
 import kotlin.math.sin
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.unit.TextUnit
 
 // ---------- ロック画面(パスワード) ----------
 
@@ -65,6 +68,55 @@ fun HexAvatar() {
             drawPath(path, Brush.linearGradient(listOf(QBlue, QViolet)), style = Stroke(2.dp.toPx()))
         }
         AtomLogo(Modifier.size(46.dp), spin = true)
+    }
+}
+
+@Composable
+private fun ClockBlock(hour: String, minute: String, date: String, hourSize: TextUnit, minuteSize: TextUnit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.Top) {
+            Text(hour, color = Color(0xFFF4A6B8), fontSize = hourSize, fontWeight = FontWeight.Black)
+            Text(
+                minute, color = Color.White, fontSize = minuteSize, fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 14.dp)
+            )
+        }
+        Text(date, color = Color(0xAAFFFFFF), fontSize = 12.sp)
+    }
+}
+
+@Composable
+private fun LoginBlock(
+    hasPassword: Boolean,
+    pw: String,
+    onPw: (String) -> Unit,
+    err: String,
+    onSubmit: () -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        HexAvatar()
+        Spacer(Modifier.height(8.dp))
+        Text(stringResource(R.string.app_name), color = Color.White, fontSize = 13.sp)
+        Spacer(Modifier.height(14.dp))
+        TextField(
+            value = pw,
+            onValueChange = onPw,
+            singleLine = true,
+            placeholder = { Text(stringResource(if (hasPassword) R.string.pw_enter else R.string.pw_new)) },
+            leadingIcon = { QIcon(Icons.Filled.Lock, 16.dp) },
+            trailingIcon = {
+                IconButton(onClick = onSubmit) { QIcon(Icons.Filled.ArrowForward, 18.dp) }
+            },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onSubmit() }),
+            shape = RoundedCornerShape(50),
+            colors = fieldColors(),
+            modifier = Modifier.width(280.dp)
+        )
+        if (err.isNotEmpty()) {
+            Text(err, color = Color(0xFFFF8A9B), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+        }
     }
 }
 
@@ -104,41 +156,28 @@ fun LockScreen(
     Box(Modifier.fillMaxSize()) {
         LocalBackdrop.current?.let { BackdropLayer(it) }
         Box(Modifier.fillMaxSize().background(Color(0x99000000)))
-        Column(
-            Modifier.align(Alignment.Center).padding(24.dp).imePadding(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row(verticalAlignment = Alignment.Top) {
-                Text(hour, color = Color(0xFFF4A6B8), fontSize = 88.sp, fontWeight = FontWeight.Black)
-                Text(
-                    minute, color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 14.dp)
-                )
-            }
-            Text(date, color = Color(0xAAFFFFFF), fontSize = 12.sp)
-            Spacer(Modifier.height(28.dp))
-            HexAvatar()
-            Spacer(Modifier.height(8.dp))
-            Text("Quantum", color = Color.White, fontSize = 13.sp)
-            Spacer(Modifier.height(14.dp))
-            TextField(
-                value = pw,
-                onValueChange = { pw = it; err = "" },
-                singleLine = true,
-                placeholder = { Text(stringResource(if (hasPassword) R.string.pw_enter else R.string.pw_new)) },
-                leadingIcon = { QIcon(Icons.Filled.Lock, 16.dp) },
-                trailingIcon = {
-                    IconButton(onClick = { submit() }) { QIcon(Icons.Filled.ArrowForward, 18.dp) }
-                },
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { submit() }),
-                shape = RoundedCornerShape(50),
-                colors = fieldColors(),
-                modifier = Modifier.width(280.dp)
-            )
-            if (err.isNotEmpty()) {
-                Text(err, color = Color(0xFFFF8A9B), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val wide = maxWidth > maxHeight
+            if (wide) {
+                // 横画面: 時計が左、ログインが右
+                Row(
+                    Modifier.align(Alignment.Center).padding(24.dp).imePadding(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(56.dp)
+                ) {
+                    ClockBlock(hour, minute, date, 76.sp, 28.sp)
+                    LoginBlock(hasPassword, pw, { pw = it; err = "" }, err) { submit() }
+                }
+            } else {
+                // 縦画面: 時計が上、ログインが下
+                Column(
+                    Modifier.align(Alignment.Center).padding(24.dp).imePadding(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ClockBlock(hour, minute, date, 88.sp, 30.sp)
+                    Spacer(Modifier.height(28.dp))
+                    LoginBlock(hasPassword, pw, { pw = it; err = "" }, err) { submit() }
+                }
             }
         }
         LanguagePill(
