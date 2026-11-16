@@ -209,7 +209,7 @@ fun TopBar(
     ) {
         Pill {
             AtomLogo(Modifier.size(14.dp))
-            Text("Atlas", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(stringResource(R.string.app_short), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
         }
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
