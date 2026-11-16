@@ -189,9 +189,8 @@ fun CosmicBackground(clock: CosmicClock, modifier: Modifier = Modifier) {
             }
             val th = orbit * 2f * PI.toFloat()
             val pos = Offset(c.x + rx * cos(th), c.y + ry * sin(th))
-        drawCircle(Color.White.copy(alpha = 0.4f + 0.6f * twinkle), w * 0.022f, Offset(c.x + w * 0.40f, c.y - w * 0.32f))
-        drawCircle(Color.White.copy(alpha = 1f - 0.6f * twinkle), w * 0.016f, Offset(c.x - w * 0.38f, c.y + w * 0.30f))
-        drawCircle(Color.White.copy(alpha = 0.3f + 0.5f * twinkle), w * 0.012f, Offset(c.x - w * 0.30f, c.y - w * 0.40f))
+            drawCircle(Color.White.copy(alpha = 0.25f), radius = 12.dp.toPx(), center = pos)
+            drawCircle(Color.White, radius = 4.dp.toPx(), center = pos)
         }
     }
 }
