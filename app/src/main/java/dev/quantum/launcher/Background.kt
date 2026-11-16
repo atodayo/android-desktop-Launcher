@@ -18,8 +18,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.cos
@@ -29,34 +32,82 @@ import kotlin.random.Random
 val QBlue = Color(0xFF4FC3F7)
 val QViolet = Color(0xFFB388FF)
 
-/** 原子ロゴ(3つの軌道) */
+/** Atlasのロゴ: くるくるまわる、黒い銀河(うずまきの腕と、光るまんなか) */
 @Composable
-fun AtomLogo(modifier: Modifier = Modifier, spin: Boolean = false) {
-    val t = rememberInfiniteTransition(label = "atom")
+fun AppLogo(modifier: Modifier = Modifier, spin: Boolean = false) {
+    val t = rememberInfiniteTransition(label = "logo")
     val angle by t.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(6000, easing = LinearEasing)),
-        label = "atomAngle"
+        animationSpec = infiniteRepeatable(tween(24000, easing = LinearEasing)),
+        label = "galaxySpin"
+    )
+    val twinkle by t.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1800), RepeatMode.Reverse),
+        label = "galaxyTwinkle"
     )
     Canvas(modifier) {
         val w = size.minDimension
-        val brush = Brush.linearGradient(listOf(QBlue, QViolet))
-        val stroke = Stroke(width = w * 0.07f)
-        rotate(if (spin) angle else 0f) {
-            for (k in 0..2) {
-                rotate(k * 60f) {
-                    drawOval(
-                        brush = brush,
-                        topLeft = Offset(w * 0.05f, w * 0.30f),
-                        size = Size(w * 0.9f, w * 0.4f),
-                        style = stroke
-                    )
-                }
+        val c = center
+        val brush = Brush.radialGradient(
+            0f to Color.White,
+            0.35f to Color(0xFFE3D8FF),
+            0.7f to Color(0xFF9B8CFF),
+            1f to Color(0x884FC3F7),
+            center = c,
+            radius = w * 0.46f
+        )
+
+        fun arm(base: Float): Path {
+            val p = Path()
+            val n = 56
+            for (i in 0..n) {
+                val u = i / n.toFloat()
+                val th = base + u * 3.6f
+                val r = w * (0.06f + 0.38f * u)
+                val x = c.x + r * cos(th)
+                val y = c.y + r * sin(th)
+                if (i == 0) p.moveTo(x, y) else p.lineTo(x, y)
             }
-            drawCircle(brush = brush, radius = w * 0.09f, center = center)
+            return p
         }
+
+        val arm1 = arm(0f)
+        val arm2 = arm(PI.toFloat())
+
+        rotate(-25f, pivot = c) {
+            scale(1f, 0.72f, pivot = c) {
+                rotate(if (spin) angle else 0f, pivot = c) {
+                    for ((width, alpha) in listOf(0.13f to 0.22f, 0.075f to 0.5f, 0.032f to 1f)) {
+                        val st = Stroke(width = w * width, cap = StrokeCap.Round)
+                        drawPath(arm1, brush, alpha = alpha, style = st)
+                        drawPath(arm2, brush, alpha = alpha, style = st)
+                    }
+                }
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(Color.White, Color(0xFFE3D8FF), Color.Transparent),
+                        center = c,
+                        radius = w * 0.17f
+                    ),
+                    radius = w * 0.17f,
+                    center = c
+                )
+            }
+        }
+
+        drawCircle(Color.White.copy(alpha = 0.4f + 0.6f * twinkle.value), w * 0.022f, Offset(c.x + w * 0.40f, c.y - w * 0.32f))
+        drawCircle(Color.White.copy(alpha = 1f - 0.6f * twinkle.value), w * 0.016f, Offset(c.x - w * 0.38f, c.y + w * 0.30f))
+        drawCircle(Color.White.copy(alpha = 0.3f + 0.5f * twinkle.value), w * 0.012f, Offset(c.x - w * 0.30f, c.y - w * 0.40f))
     }
+}
+
+/** 古い名前(まえの呼びかたのまま使えるようにしてあるよ) */
+@Composable
+fun AtomLogo(modifier: Modifier = Modifier, spin: Boolean = false) {
+    AppLogo(modifier, spin)
 }
 
 /** 背景のアニメーションの時計(ガラスの中の背景とズレないように、みんなで共有する) */
@@ -83,13 +134,11 @@ fun rememberCosmicClock(): CosmicClock {
     return remember { CosmicClock(orbit, twinkle) }
 }
 
-/** 時計を自分で作るバージョン(ロック画面などで使う) */
 @Composable
 fun CosmicBackground(modifier: Modifier = Modifier) {
     CosmicBackground(rememberCosmicClock(), modifier)
 }
 
-/** 宇宙っぽい背景:紫とシアンの星雲、またたく星、軌道を回る白い点 */
 @Composable
 fun CosmicBackground(clock: CosmicClock, modifier: Modifier = Modifier) {
     val stars = remember {
